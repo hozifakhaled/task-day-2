@@ -222,38 +222,28 @@ class _CategoriesProductsScreenState
                       );
                     }
 
-                    return RefreshIndicator(
-                      onRefresh: () async {
-                        setState(() {
-                          productsFuture = dioService
-                              .getFilterProducts(selectedCategory);
-                        });
-
-                        await productsFuture;
-                      },
-                      child: GridView.builder(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        itemCount: products.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 14,
-                          mainAxisSpacing: 14,
-                          childAspectRatio: .72,
-                        ),
-                        itemBuilder: (context, index) {
-                          final product = products[index];
-
-                          return ProductCard(
-                            name: product.strMeal,
-                            imageUrl: product.strMealThumb,
-                            price: '',
-                          );
-                        },
+                    return GridView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
+                      itemCount: products.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: .72,
+                      ),
+                      itemBuilder: (context, index) {
+                        final product = products[index];
+                    
+                        return ProductCard(
+                          name: product.strMeal,
+                          imageUrl: product.strMealThumb,
+                          price: '',
+                        );
+                      },
                     );
                   },
                 );
