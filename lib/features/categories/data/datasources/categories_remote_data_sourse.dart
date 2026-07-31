@@ -53,4 +53,28 @@ class CategoriesRemoteDataSourse implements CategoriesDataSource {
       },
     );
   }
+  
+  @override
+  cacheCategories(List<CategoryModel>? categoriesToCache) {
+    // TODO: implement cacheCategories
+    throw UnimplementedError();
+  }
+  
+  @override
+  cacheMeals(List<MealModel>? meals) {
+    // TODO: implement cacheMeals
+    throw UnimplementedError();
+  }
+  
+  @override
+  Future<List<CategoryModel>> getLastCategories() {
+    // TODO: implement getLastCategories
+    throw UnimplementedError();
+  }
+  
+  @override
+  Future<List<MealModel>> getLastMeals() {
+    // TODO: implement getLastMeals
+    throw UnimplementedError();
+  }
 }

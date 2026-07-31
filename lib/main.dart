@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:task2/core/cache/cache_helper.dart';
 import 'package:task2/core/di/service_locator.dart';
 import 'package:task2/features/categories/presentation/pages/categoies_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initServiceLocator();
+     CacheHelper().init(); 
   runApp(const MyApp());
 }
 

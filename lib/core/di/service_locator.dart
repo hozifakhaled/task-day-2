@@ -1,7 +1,13 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:data_connection_checker_tv/data_connection_checker.dart';
+import 'dart:io';
+import 'dart:async';
 import 'package:dio/dio.dart';
-
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:task2/core/connections/network_info.dart';
 import 'package:task2/features/categories/data/datasources/categories_data_sources.dart';
+import 'package:task2/features/categories/data/datasources/categories_data_sourse_local.dart';
 import 'package:task2/features/categories/data/datasources/categories_remote_data_sourse.dart';
 import 'package:task2/features/categories/data/repositories/categories_repo_impli.dart';
 import 'package:task2/features/categories/domain/repositories/caegories_repo.dart';
@@ -14,7 +20,6 @@ import 'package:task2/features/meals%20details/data/repositories/meal_details_re
 import 'package:task2/features/meals%20details/domain/repositories/meal_details_repo.dart';
 import 'package:task2/features/meals%20details/domain/usecases/get_meals_use_case.dart';
 import 'package:task2/features/meals%20details/presentation/cubit/meals_details_cubit.dart';
-
 
 import '../network/api_consumer.dart';
 
@@ -33,13 +38,17 @@ Future<void> initServiceLocator() async {
 }
 
 /// Register core services that should be singletons
-void _registerCoreServices() {
- 
-
+void _registerCoreServices()async {
+  final sharedPreferences = await SharedPreferences.getInstance();
+  getIt.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
   getIt.registerLazySingleton<LoggerInterceptor>(() => LoggerInterceptor());
-
+ getIt.registerLazySingleton<DataConnectionChecker>(
+    () => DataConnectionChecker(),
+  );
+   
   getIt.registerLazySingleton<Dio>(() {
     final dio = Dio();
+   
     dio.interceptors.add(
       LogInterceptor(
         request: true,
@@ -48,8 +57,9 @@ void _registerCoreServices() {
         responseBody: true,
         responseHeader: false,
         error: true,
-        logPrint: (object) => getIt<LoggerInterceptor>().logger.i(object.toString()),
-      )
+        logPrint: (object) =>
+            getIt<LoggerInterceptor>().logger.i(object.toString()),
+      ),
     );
     dio.interceptors.add(getIt<LoggerInterceptor>());
     return dio;
@@ -59,35 +69,45 @@ void _registerCoreServices() {
     () => DioConsumer(dio: getIt<Dio>()),
   );
 
+  getIt.registerLazySingleton<NetworkInfo>(
+    () => NetworkInfoImpl(Connectivity()),
+  );
 }
+
 void _registerDataSourses() {
   getIt.registerLazySingleton<CategoriesDataSource>(
-    () => CategoriesRemoteDataSourse(dio:getIt<ApiConsumer>()),
+    () => CategoriesRemoteDataSourse(dio: getIt<ApiConsumer>()),
   );
   getIt.registerLazySingleton<MealDetailsDataSource>(
-    () => MealDetailsDataSourceRemote(dio:getIt<ApiConsumer>()),
+    () => MealDetailsDataSourceRemote(dio: getIt<ApiConsumer>()),
+  );
+  getIt.registerLazySingleton<CategoriesDatasourseLocal>(
+    () => CategoriesDatasourseLocal(cache: getIt()),
   );
 }
+
 void _registerRepositories() {
   getIt.registerLazySingleton<CategoriesRepository>(
-    () => CategoriesRepoImpl(dataSource: getIt<CategoriesDataSource>()),
+    () => CategoriesRepoImpl(
+      dataSource: getIt<CategoriesDataSource>(),
+      getIt<NetworkInfo>(),
+      getIt<CategoriesDatasourseLocal>(),
+    ),
   );
   getIt.registerLazySingleton<MealDetailsRepo>(
     () => MealDetailsRepoImpli(dataSource: getIt<MealDetailsDataSource>()),
   );
- 
-
 }
-  
+
 void _registerUsecase() {
-    getIt.registerLazySingleton<GetCategoriesUseCase>(
-    () => GetCategoriesUseCase( getIt<CategoriesRepository>()),
+  getIt.registerLazySingleton<GetCategoriesUseCase>(
+    () => GetCategoriesUseCase(getIt<CategoriesRepository>()),
   );
-    getIt.registerLazySingleton<GetProductsByCategoryUseCase>(
-    () => GetProductsByCategoryUseCase( getIt<CategoriesRepository>()),
+  getIt.registerLazySingleton<GetProductsByCategoryUseCase>(
+    () => GetProductsByCategoryUseCase(getIt<CategoriesRepository>()),
   );
   getIt.registerLazySingleton<GetMealsUseCase>(
-    () => GetMealsUseCase( getIt<MealDetailsRepo>()),
+    () => GetMealsUseCase(getIt<MealDetailsRepo>()),
   );
 }
 
@@ -96,18 +116,13 @@ void _registerCubits() {
   getIt.registerFactory<CategoriesCubit>(
     () => CategoriesCubit(
       getIt<GetProductsByCategoryUseCase>(),
-      getIt<GetCategoriesUseCase>()
+      getIt<GetCategoriesUseCase>(),
     ),
   );
   getIt.registerFactory<MealsDetailsCubit>(
-    () => MealsDetailsCubit(
-      getIt<GetMealsUseCase>()
-    ),
-    
+    () => MealsDetailsCubit(getIt<GetMealsUseCase>()),
   );
 }
- 
-
 
 /// Reset all registrations (useful for testing)
 Future<void> resetServiceLocator() async {
